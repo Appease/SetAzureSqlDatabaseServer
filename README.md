@@ -22,18 +22,7 @@ description: a `string` representing the name of the resource group this Sql Dat
 
 #####Location
 description: a `string` representing the geographical location of the Sql Database Server.  
-known allowed values: 
-```PowerShell
-PS C:\> AzureResourceManager\Get-AzureLocation |
-    ?{$_.Name -eq 'Microsoft.Sql/servers'} |
-    select LocationsString |
-    ft -Wrap
-
-LocationsString                                                                                 
----------------                                                                                 
-Brazil South, Central US, East Asia, East US, East US 2, Japan East, Japan West, North Central  
-US, North Europe, South Central US, Southeast Asia, West Europe, West US
-```
+known allowed values: `Brazil South`, `Central US`, `East Asia`, `East US`, `East US 2`, `Japan East`, `Japan West`, `North Central US`, `North Europe`, `South Central US`, `Southeast Asia`, `West Europe`, `West US`
 
 #####AdministratorLogin
 description: a `string` representing the administrator login for the Sql Database Server.
