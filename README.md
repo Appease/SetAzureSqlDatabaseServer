@@ -2,7 +2,7 @@
 
 ####What is it?
 
-An [Appease](http://appease.io) task template that sets an [Azure SQL Database](http://azure.microsoft.com/en-us/services/sql-database/).
+An [Appease](http://appease.io) task template that sets an [Azure SQL Database Server](http://azure.microsoft.com/en-us/services/sql-database/).
 
 ####How do I install it?
 
