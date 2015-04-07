@@ -1,6 +1,7 @@
 # halt immediately on any errors which occur in this module
 $ErrorActionPreference = 'Stop'
 Import-Module 'C:\Program Files (x86)\Microsoft SDKs\Azure\PowerShell\ResourceManager\AzureResourceManager' -Force -RequiredVersion '0.8.8'
+Import-Module 'C:\Program Files (x86)\Microsoft SDKs\Azure\PowerShell\ServiceManagement\Azure' -Force -RequiredVersion '0.8.8'
 
 function Invoke(
 
@@ -39,7 +40,7 @@ function Invoke(
         ValueFromPipelineByPropertyName=$true)]
     $AdministratorLoginPassword,
 
-    [float]
+    [string]
     [ValidateNotNullOrEmpty()]
     [Parameter(
         Mandatory=$true,
@@ -49,17 +50,21 @@ function Invoke(
 
     $ApiVersion = '2014-04-01'
     $ResourceType = 'Microsoft.Sql/servers'
-    # azure returns location strings with whitespace stripped
-    $WhitespaceStrippedLocation = $Location -replace '\s', ''
+    $AzureSqlDatabaseServerResources = AzureResourceManager\Get-AzureResource -ResourceType $ResourceType 
+    $ExistingAzureSqlDatabaseServerResource = $AzureSqlDatabaseServerResources | ? {$_.Name -eq $Name}
 
-    # build up property Hashtable from parameters
-    $Properties = @{
-        administratorLogin=$AdministratorLogin;
-        administratorLoginPassword=$AdministratorLoginPassword;
-        version=$Version
-    }
-
-    If(!(AzureResourceManager\Get-AzureResource | ?{($_.Name -eq $Name) -and ($_.ResourceGroupName -eq $ResourceGroupName) -and ($_.Location -eq $WhitespaceStrippedLocation) -and ($_.ResourceType -eq $ResourceType)})){
+    Write-Output $ExistingAzureSqlDatabaseServerResource
+        
+    # handle new
+    If(!$ExistingAzureSqlDatabaseServerResource){
+        
+        # build up property Hashtable from parameters
+        $Properties = @{
+            administratorLogin=$AdministratorLogin;
+            administratorLoginPassword=$AdministratorLoginPassword;
+            version=$Version
+        }
+        
         AzureResourceManager\New-AzureResource `
         -Location $Location `
         -Name $Name `
@@ -68,13 +73,44 @@ function Invoke(
         -ApiVersion $ApiVersion `
         -PropertyObject $Properties
     }
+    # handle existing
     Else{
-        AzureResourceManager\Set-AzureResource `
-        -Name $Name `
-        -ResourceGroupName $ResourceGroupName `
-        -ResourceType $ResourceType `
-        -ApiVersion $ApiVersion `
-        -PropertyObject $Properties
+
+        $ExistingAzureSqlDatabaseServer = Get-AzureSqlDatabaseServer -ServerName $Name
+
+        # handle location
+        if($ExistingAzureSqlDatabaseServer.Location -ne $Location){            
+            throw "Changing an Azure Sql Database Server location is (currently) unsupported"
+        }
+
+        # handle resource group
+        If($ExistingAzureSqlDatabaseServerResource.ResourceGroupName -ne $ResourceGroupName){
+            
+            throw "Changing an Azure Sql Database Server resource group is (currently) unsupported"
+
+            # @TODO: 
+            # according to: http://azure.microsoft.com/en-us/documentation/articles/powershell-azure-resource-manager/
+            # the following should work but Move-AzureResource is not present in the 0.8.8 sdk.. 
+            # AzureResourceManager\Move-AzureResource -DestinationResourceGroupName $ResourceGroupName -ResourceId 
+        }
+
+        # handle administrator login
+        If($ExistingAzureSqlDatabaseServer.AdministratorLogin -ne $AdministratorLogin){
+            throw "Changing the Azure Sql Database Server administrator login is (currently) unsupported"
+        }
+
+        # handle version
+        If($ExistingAzureSqlDatabaseServer.Version -ne $Version){
+            AzureResourceManager\Set-AzureResource `
+            -Name $Name `
+            -ResourceGroupName $ResourceGroupName `
+            -ResourceType $ResourceType `
+            -ApiVersion $ApiVersion `
+            -PropertyObject @{version=$Version}
+        }
+
+        # cannot get existing password so just overwrite it to ensure it's set to the desired value
+        Azure\Set-AzureSqlDatabaseServer -ServerName $Name -AdminPassword $AdministratorLoginPassword        
     }
 }
 
