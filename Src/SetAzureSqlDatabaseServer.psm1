@@ -50,8 +50,7 @@ function Invoke(
 
     $ApiVersion = '2014-04-01'
     $ResourceType = 'Microsoft.Sql/servers'
-    $AzureSqlDatabaseServerResources = AzureResourceManager\Get-AzureResource -ResourceType $ResourceType 
-    $ExistingAzureSqlDatabaseServerResource = $AzureSqlDatabaseServerResources | ? {$_.Name -eq $Name}
+    $ExistingAzureSqlDatabaseServerResource = AzureResourceManager\Get-AzureResource -ResourceType $ResourceType | ? {$_.Name -eq $Name}
 
     Write-Output $ExistingAzureSqlDatabaseServerResource
         
